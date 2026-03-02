@@ -1,8 +1,8 @@
-<center><img src="icon.png" style="zoom:40%;"></center>
+<p align="center"><img src="icon.png" style="zoom:40%;"></p>
 
-<center><font size=10>MKClue</font></center>
+<h1 align="center">MKClue</h1>
 
-<center><font size=5>一款优雅的 Markdown 编辑器，支持实时预览、文件夹映射和图片查看</font></center>
+<div align="center">一款优雅的 Markdown 编辑器</div>
 
 ## 功能特性
 
