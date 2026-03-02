@@ -1,6 +1,8 @@
-# MKClue
+<center><img src="icon.png" style="zoom:40%;"></center>
 
-一款优雅的 Markdown 编辑器，支持实时预览、文件夹映射和图片查看。
+<center><font size=10>MKClue</font></center>
+
+<center><font size=5>一款优雅的 Markdown 编辑器，支持实时预览、文件夹映射和图片查看</font></center>
 
 ## 功能特性
 
@@ -20,10 +22,8 @@
 - 浅色主题
 - 平滑过渡动画
 
-### 🌐 多语言
+### 🌐 多语言(目前只支持中文)
 - 简体中文
-- English
-- 日本語
 
 ### ⚡ 其他特性
 - 实时预览 Markdown 渲染效果
@@ -117,3 +117,7 @@ mkclue/
    npm config set electron_mirror https://npmmirror.com/mirrors/electron/
    ```
 4. **文件夹映射** - 此功能仅在桌面应用中可用
+
+## License
+
+[**MIT**](LICENSE).
