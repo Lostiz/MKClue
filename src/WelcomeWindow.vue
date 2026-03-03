@@ -65,7 +65,7 @@ export default {
       }
       
       if (!iconPath.value) {
-        iconPath.value = './icon.png';
+        iconPath.value = '/mkclue.ico';
       }
       
       document.documentElement.setAttribute('data-theme', theme.value);

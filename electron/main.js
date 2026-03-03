@@ -15,14 +15,14 @@ function getIndexHtmlPath() {
 }
 
 function getIconPath() {
-  const distIcon = getResourcePath('dist', 'icon.png');
+  const distIcon = getResourcePath('dist', 'mkclue.ico');
   if (fs.existsSync(distIcon)) return distIcon;
   
-  const publicIcon = getResourcePath('public', 'icon.png');
+  const publicIcon = getResourcePath('public', 'mkclue.ico');
   if (fs.existsSync(publicIcon)) return publicIcon;
   
   if (process.resourcesPath) {
-    const resourcesIcon = path.join(process.resourcesPath, 'public', 'icon.png');
+    const resourcesIcon = path.join(process.resourcesPath, 'public', 'mkclue.ico');
     if (fs.existsSync(resourcesIcon)) return resourcesIcon;
   }
   
@@ -447,6 +447,15 @@ ipcMain.handle('rename-item', async (event, oldPath, newName) => {
   }
 });
 
+ipcMain.handle('move-item', async (event, sourcePath, targetPath) => {
+  try {
+    fs.renameSync(sourcePath, targetPath);
+    return { success: true, newPath: targetPath };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
 ipcMain.handle('file-exists', async (event, filePath) => {
   try {
     return { success: true, exists: fs.existsSync(filePath) };
@@ -586,7 +595,7 @@ ipcMain.handle('get-app-info', () => {
     success: true,
     info: {
       name: 'MKClue',
-      version: '1.0.0',
+      version: '1.1.0',
       electron: process.versions.electron,
       node: process.versions.node,
       platform: process.platform

@@ -10,101 +10,132 @@
       </div>
     </div>
 
-    <div class="settings-content">
-      <section class="settings-section">
-        <h2 class="section-title">外观</h2>
-        
-        <div class="setting-item">
-          <div class="setting-info">
-            <span class="setting-label">主题</span>
-            <span class="setting-desc">选择应用的颜色主题</span>
-          </div>
-          <div class="theme-selector">
-            <button 
-              class="theme-btn" 
-              :class="{ active: theme === 'dark' }"
-              @click="setTheme('dark')"
-            >
-              🌙 深色
-            </button>
-            <button 
-              class="theme-btn" 
-              :class="{ active: theme === 'light' }"
-              @click="setTheme('light')"
-            >
-              ☀️ 浅色
-            </button>
-          </div>
+    <div class="settings-layout">
+      <div class="settings-sidebar">
+        <div class="sidebar-nav">
+          <button 
+            v-for="item in navItems" 
+            :key="item.id"
+            class="nav-item"
+            :class="{ active: activeSection === item.id }"
+            @click="setActiveSection(item.id)"
+          >
+            <span class="nav-icon">{{ item.icon }}</span>
+            <span class="nav-text">{{ item.label }}</span>
+          </button>
         </div>
-      </section>
+      </div>
 
-      <div class="divider"></div>
-
-      <section class="settings-section">
-        <h2 class="section-title">编辑器</h2>
-        
-        <div class="setting-item">
-          <div class="setting-info">
-            <span class="setting-label">自动保存</span>
-            <span class="setting-desc">编辑时自动保存文件</span>
-          </div>
-          <label class="switch">
-            <input type="checkbox" v-model="autoSave" @change="saveSettings">
-            <span class="switch-slider"></span>
-          </label>
-        </div>
-
-        <div class="setting-item">
-          <div class="setting-info">
-            <span class="setting-label">实时预览</span>
-            <span class="setting-desc">编辑时实时更新预览</span>
-          </div>
-          <label class="switch">
-            <input type="checkbox" v-model="livePreview" @change="saveSettings">
-            <span class="switch-slider"></span>
-          </label>
-        </div>
-      </section>
-
-      <div class="divider"></div>
-
-      <section class="settings-section about-section">
-        <h2 class="section-title">关于</h2>
-        
-        <div class="about-content">
-          <img v-if="iconPath" :src="iconPath" class="app-logo-large" alt="MKClue" />
-          <h3 class="app-name">MKClue</h3>
-          <p class="app-version">版本 {{ version }}</p>
-          <p class="app-desc">优雅的 Markdown 编辑器</p>
-          
-          <div class="author-info">
-            <span class="author-label">作者</span>
-            <span class="author-name">Lostiz</span>
-          </div>
-          
-          <a href="#" class="github-link" @click.prevent="openGitHub">
-            <svg class="github-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
-            </svg>
-            <span>GitHub</span>
-          </a>
-          
-          <div class="tech-info">
-            <div class="tech-item">
-              <span class="tech-label">Electron</span>
-              <span class="tech-value">{{ electronVersion }}</span>
-            </div>
-            <div class="tech-item">
-              <span class="tech-label">Node.js</span>
-              <span class="tech-value">{{ nodeVersion }}</span>
-            </div>
-            <div class="tech-item">
-              <span class="tech-label">平台</span>
-              <span class="tech-value">{{ platform }}</span>
+      <div class="settings-main">
+        <Transition name="fade-slide" mode="out-in">
+          <div class="settings-content" v-if="activeSection === 'appearance'" key="appearance">
+            <h2 class="section-title">外观设置</h2>
+            
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-label">主题</span>
+                <span class="setting-desc">选择应用的颜色主题</span>
+              </div>
+              <div class="theme-selector">
+                <button 
+                  class="theme-btn" 
+                  :class="{ active: theme === 'dark' }"
+                  @click="setTheme('dark')"
+                >
+                  <span class="btn-emoji">🌙</span>
+                  <span class="btn-text">深色</span>
+                </button>
+                <button 
+                  class="theme-btn" 
+                  :class="{ active: theme === 'light' }"
+                  @click="setTheme('light')"
+                >
+                  <span class="btn-emoji">☀️</span>
+                  <span class="btn-text">浅色</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+
+          <div class="settings-content" v-else-if="activeSection === 'editor'" key="editor">
+            <h2 class="section-title">编辑器设置</h2>
+            
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-label">自动保存</span>
+                <span class="setting-desc">编辑时自动保存文件</span>
+              </div>
+              <label class="switch">
+                <input type="checkbox" v-model="autoSave" @change="saveSettings">
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-info">
+                <span class="setting-label">格式模式</span>
+                <span class="setting-desc">选择工具栏插入语法的格式类型</span>
+              </div>
+              <div class="format-selector">
+                <button 
+                  class="format-btn" 
+                  :class="{ active: formatMode === 'markdown' }"
+                  @click="setFormatMode('markdown')"
+                >
+                  <span class="btn-emoji">📝</span>
+                  <span class="btn-text">Markdown</span>
+                </button>
+                <button 
+                  class="format-btn" 
+                  :class="{ active: formatMode === 'html' }"
+                  @click="setFormatMode('html')"
+                >
+                  <span class="btn-emoji">🌐</span>
+                  <span class="btn-text">HTML</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-content" v-else-if="activeSection === 'about'" key="about">
+            <h2 class="section-title">关于</h2>
+            
+            <div class="about-content">
+              <img v-if="iconPath" :src="iconPath" class="app-logo-large" alt="MKClue" />
+              <h3 class="app-name">MKClue</h3>
+              <p class="app-version">版本 v1.1</p>
+              <p class="app-desc">优雅的 Markdown 编辑器</p>
+              
+              <div class="author-info">
+                <span class="author-label">作者</span>
+                <span class="author-name">Lostiz</span>
+              </div>
+              
+              <a href="#" class="github-link" @click.prevent="openGitHub">
+                <svg class="github-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                </svg>
+                <span>GitHub</span>
+              </a>
+              
+              <div class="tech-info">
+                <div class="tech-item">
+                  <span class="tech-label">Electron</span>
+                  <span class="tech-value">{{ electronVersion }}</span>
+                </div>
+                <div class="tech-item">
+                  <span class="tech-label">Node.js</span>
+                  <span class="tech-value">{{ nodeVersion }}</span>
+                </div>
+                <div class="tech-item">
+                  <span class="tech-label">平台</span>
+                  <span class="tech-value">{{ platform }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </div>
     </div>
   </div>
 </template>
@@ -117,12 +148,19 @@ export default {
   setup() {
     const theme = ref('dark');
     const autoSave = ref(true);
-    const livePreview = ref(true);
-    const version = ref('1.0.0');
+    const formatMode = ref('markdown');
+    const version = ref('1.1.0');
     const electronVersion = ref('');
     const nodeVersion = ref('');
     const platform = ref('');
     const iconPath = ref(null);
+    const activeSection = ref('appearance');
+
+    const navItems = [
+      { id: 'appearance', icon: '🎨', label: '外观' },
+      { id: 'editor', icon: '✏️', label: '编辑器' },
+      { id: 'about', icon: 'ℹ️', label: '关于' }
+    ];
 
     const loadSettings = async () => {
       if (window.electronAPI) {
@@ -130,7 +168,7 @@ export default {
         if (result && result.success) {
           theme.value = result.config.theme || 'dark';
           autoSave.value = result.config.autoSave !== false;
-          livePreview.value = result.config.livePreview !== false;
+          formatMode.value = result.config.formatMode || 'markdown';
         }
 
         const appInfo = await window.electronAPI.getAppInfo();
@@ -149,10 +187,14 @@ export default {
       } else {
         const savedTheme = localStorage.getItem('mkclue-theme');
         if (savedTheme) theme.value = savedTheme;
-        iconPath.value = '/icon.png';
+        iconPath.value = '/mkclue.ico';
       }
 
       document.documentElement.setAttribute('data-theme', theme.value);
+    };
+
+    const setActiveSection = (section) => {
+      activeSection.value = section;
     };
 
     const setTheme = (newTheme) => {
@@ -161,11 +203,17 @@ export default {
       saveSettings();
     };
 
+    const setFormatMode = (mode) => {
+      formatMode.value = mode;
+      saveSettings();
+    };
+
     const saveSettings = async () => {
       const config = {
         theme: theme.value,
         autoSave: autoSave.value,
-        livePreview: livePreview.value
+        livePreview: true,
+        formatMode: formatMode.value
       };
 
       if (window.electronAPI) {
@@ -196,13 +244,17 @@ export default {
     return {
       theme,
       autoSave,
-      livePreview,
+      formatMode,
       version,
       electronVersion,
       nodeVersion,
       platform,
       iconPath,
+      activeSection,
+      navItems,
+      setActiveSection,
       setTheme,
+      setFormatMode,
       saveSettings,
       closeWindow,
       openGitHub
@@ -217,7 +269,7 @@ export default {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  background: var(--bg-primary);
   color: var(--text-primary);
   overflow: hidden;
 }
@@ -231,6 +283,7 @@ export default {
   align-items: center;
   padding-left: 12px;
   -webkit-app-region: drag;
+  flex-shrink: 0;
 }
 
 .titlebar-drag {
@@ -265,7 +318,7 @@ export default {
   color: var(--text-muted);
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background 0.15s, color 0.15s;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -281,55 +334,140 @@ export default {
   color: white;
 }
 
-.settings-content {
+.settings-layout {
   flex: 1;
-  overflow-y: auto;
-  padding: 20px 24px;
+  display: flex;
+  overflow: hidden;
 }
 
-.settings-section {
-  margin-bottom: 8px;
+.settings-sidebar {
+  width: 200px;
+  min-width: 200px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  padding: 16px 0;
+  flex-shrink: 0;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 8px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.nav-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background: var(--accent-primary);
+  color: var(--bg-primary);
+}
+
+.nav-icon {
+  font-size: 16px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.nav-text {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.settings-main {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg-primary);
+}
+
+.settings-content {
+  padding: 24px 32px;
+  min-width: 400px;
 }
 
 .section-title {
-  font-size: 12px;
+  font-size: 18px;
   font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 14px;
+  color: var(--text-primary);
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
 }
 
 .setting-item {
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border-color);
+  gap: 32px;
+  min-height: 60px;
+}
+
+.setting-item:last-child {
+  border-bottom: none;
 }
 
 .setting-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
 }
 
 .setting-label {
   font-size: 14px;
   color: var(--text-primary);
   font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
 }
 
 .setting-desc {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
+  line-height: 1.6;
+  white-space: nowrap;
 }
 
-.theme-selector {
+.theme-selector,
+.format-selector {
   display: flex;
-  gap: 8px;
+  flex-direction: row;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
-.theme-btn {
+.theme-btn,
+.format-btn {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
   padding: 10px 16px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
@@ -337,58 +475,106 @@ export default {
   color: var(--text-secondary);
   cursor: pointer;
   font-size: 13px;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.theme-btn:hover {
+.btn-emoji {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.btn-text {
+  white-space: nowrap;
+}
+
+.theme-btn:hover,
+.format-btn:hover {
   background: var(--bg-hover);
 }
 
-.theme-btn.active {
+.theme-btn.active,
+.format-btn.active {
   background: var(--accent-primary);
   color: var(--bg-primary);
   border-color: var(--accent-primary);
 }
 
-.divider {
-  height: 1px;
-  background: var(--border-color);
-  margin: 16px 0;
+.fade-slide-enter-active {
+  animation: fadeSlideIn 0.2s ease;
+}
+
+.fade-slide-leave-active {
+  animation: fadeSlideOut 0.15s ease;
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-slide-enter-active,
+  .fade-slide-leave-active {
+    animation: none;
+  }
+  
+  .nav-item,
+  .theme-btn,
+  .format-btn,
+  .titlebar-btn {
+    transition: none;
+  }
 }
 
 .about-content {
   text-align: center;
-  padding: 16px 0;
+  padding: 24px 0;
 }
 
 .app-logo-large {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
   object-fit: contain;
-  margin: 0 auto 14px;
+  margin: 0 auto 16px;
 }
 
 .app-name {
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: 22px;
+  font-size: 24px;
   color: var(--text-primary);
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .app-version {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .app-desc {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-secondary);
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .author-info {
@@ -396,16 +582,16 @@ export default {
   justify-content: center;
   align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .author-label {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
 .author-name {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text-primary);
   font-weight: 500;
 }
@@ -413,17 +599,17 @@ export default {
 .github-link {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
+  gap: 8px;
+  padding: 10px 20px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   color: var(--text-secondary);
   text-decoration: none;
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .github-link:hover {
@@ -433,39 +619,42 @@ export default {
 }
 
 .github-icon {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
 }
 
 .tech-info {
   display: flex;
   justify-content: center;
-  gap: 24px;
+  gap: 32px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
 }
 
 .tech-item {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .tech-label {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .tech-value {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-secondary);
   font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
 }
 
 .switch {
   position: relative;
-  width: 44px;
-  height: 24px;
+  width: 48px;
+  height: 26px;
+  flex-shrink: 0;
 }
 
 .switch input {
@@ -483,20 +672,20 @@ export default {
   bottom: 0;
   background-color: var(--bg-tertiary);
   border: 1px solid var(--border-color);
-  border-radius: 24px;
-  transition: 0.3s;
+  border-radius: 26px;
+  transition: background-color 0.3s, border-color 0.3s;
 }
 
 .switch-slider:before {
   position: absolute;
   content: "";
-  height: 18px;
-  width: 18px;
+  height: 20px;
+  width: 20px;
   left: 2px;
   bottom: 2px;
   background-color: var(--text-muted);
   border-radius: 50%;
-  transition: 0.3s;
+  transition: transform 0.3s ease, background-color 0.3s;
 }
 
 .switch input:checked + .switch-slider {
@@ -505,7 +694,14 @@ export default {
 }
 
 .switch input:checked + .switch-slider:before {
-  transform: translateX(20px);
+  transform: translateX(22px);
   background-color: var(--bg-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switch-slider,
+  .switch-slider:before {
+    transition: none;
+  }
 }
 </style>

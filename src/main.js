@@ -3,12 +3,7 @@ import App from './App.vue';
 import SettingsWindow from './SettingsWindow.vue';
 import WelcomeWindow from './WelcomeWindow.vue';
 import './styles/main.css';
-
-import { marked } from 'marked';
-marked.setOptions({
-  breaks: true,
-  gfm: true
-});
+import 'katex/dist/katex.min.css';
 
 const urlParams = new URLSearchParams(window.location.search);
 const windowType = urlParams.get('window');

@@ -1,6 +1,6 @@
 {
   "name": "mkclue",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "MKClue - An elegant Markdown editor with folder mapping and image support",
   "author": "Lostiz",
   "main": "electron/main.js",
@@ -13,7 +13,11 @@
     "electron:preview": "vite build && electron ."
   },
   "dependencies": {
+    "highlight.js": "^11.9.0",
+    "katex": "^0.16.9",
     "marked": "^12.0.0",
+    "marked-highlight": "^2.1.0",
+    "mermaid": "^10.8.0",
     "vue": "^3.4.0"
   },
   "devDependencies": {
@@ -50,15 +54,15 @@
           "arch": ["x64"]
         }
       ],
-      "icon": "public/icon.ico"
+      "icon": "public/mkclue.ico"
     },
     "mac": {
       "target": "dmg",
-      "icon": "public/icon.ico"
+      "icon": "public/mkclue.ico"
     },
     "linux": {
       "target": "AppImage",
-      "icon": "public/icon.ico"
+      "icon": "public/mkclue.ico"
     },
     "nsis": {
       "oneClick": false,
@@ -72,8 +76,8 @@
       "language": "2052",
       "perMachine": false,
       "allowElevation": true,
-      "installerIcon": "public/icon.ico",
-      "uninstallerIcon": "public/icon.ico",
+      "installerIcon": "public/mkclue.ico",
+      "uninstallerIcon": "public/mkclue.ico",
       "include": "./build/uninstall.nsh"
     }
   }

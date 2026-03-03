@@ -26,6 +26,7 @@
         @select-folder-file="selectFolderFile"
         @folder-changed="refreshFolder"
         @new-file="createNewDocument"
+        @delete-file="deleteCurrentDocument"
       />
 
       <div class="main-content" :class="{ 'sidebar-collapsed': !sidebarOpen }">
@@ -44,7 +45,15 @@
           @insert-image="insertImage"
         />
 
+        <EditorToolbar
+          v-if="folderFile"
+          :format-mode="formatMode"
+          @insert="insertToolbarSyntax"
+          @insert-image="insertImage"
+        />
+
         <EditorContainer
+          ref="editorContainerRef"
           :current-file="displayFile"
           :view-mode="viewMode"
           :rendered-content="renderedContent"
@@ -55,9 +64,9 @@
       </div>
     </div>
 
-    <div 
-      v-if="previewImage" 
-      class="image-preview-overlay" 
+    <div
+      v-if="previewImage"
+      class="image-preview-overlay"
       @click="previewImage = null"
     >
       <img :src="previewImage" alt="Preview" @click.stop>
@@ -68,15 +77,50 @@
 
 <script>
 import { marked } from 'marked';
+import { markedHighlight } from 'marked-highlight';
+import hljs from 'highlight.js';
+import katex from 'katex';
+import mermaid from 'mermaid';
 import Sidebar from './components/Sidebar.vue';
 import EditorHeader from './components/EditorHeader.vue';
+import EditorToolbar from './components/EditorToolbar.vue';
 import EditorContainer from './components/EditorContainer.vue';
+
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'dark',
+  securityLevel: 'loose'
+});
+
+const renderer = new marked.Renderer();
+
+renderer.code = function(code, language) {
+  if (language === 'mermaid') {
+    return `<div class="mermaid">${code}</div>`;
+  }
+  const langLabel = language ? language.toLowerCase() : '';
+  const displayLang = langLabel || 'code';
+  let highlighted;
+  if (language) {
+    try {
+      highlighted = hljs.highlight(code, { language }).value;
+    } catch {
+      highlighted = hljs.highlightAuto(code).value;
+    }
+  } else {
+    highlighted = hljs.highlightAuto(code).value;
+  }
+  return `<div class="code-block-wrapper"><div class="code-lang-label">${displayLang}</div><pre><code class="hljs${langLabel ? ' language-' + langLabel : ''}">${highlighted}</code></pre></div>`;
+};
+
+marked.use({ renderer });
 
 export default {
   name: 'App',
   components: {
     Sidebar,
     EditorHeader,
+    EditorToolbar,
     EditorContainer
   },
   data() {
@@ -88,6 +132,8 @@ export default {
       viewMode: 'split',
       theme: 'dark',
       language: 'zh-CN',
+      autoSave: true,
+      formatMode: 'markdown',
       iconPath: null,
       previewImage: null,
       renderedContent: ''
@@ -124,24 +170,71 @@ export default {
         this.renderedContent = '';
         return;
       }
-      
+
+      let processedContent = content;
+
       if (this.folderFile?.path && window.electronAPI) {
         try {
           const result = await window.electronAPI.resolveImagePaths(content, this.folderFile.path);
           if (result && result.success) {
-            this.renderedContent = marked.parse(result.content);
-          } else {
-            this.renderedContent = marked.parse(content);
+            processedContent = result.content;
           }
         } catch (e) {
-          console.error('渲染错误:', e);
-          this.renderedContent = marked.parse(content);
+          console.error('图片路径解析错误:', e);
         }
-      } else {
+      }
+
+      processedContent = this.processMath(processedContent);
+
+      try {
+        this.renderedContent = marked.parse(processedContent);
+        this.$nextTick(() => {
+          this.renderMermaid();
+        });
+      } catch (e) {
+        console.error('渲染错误:', e);
         this.renderedContent = marked.parse(content);
       }
     },
-    
+
+    processMath(content) {
+      content = content.replace(/\$\$([^$]+)\$\$/g, (match, formula) => {
+        try {
+          return `<div class="math-block">${katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false })}</div>`;
+        } catch {
+          return match;
+        }
+      });
+      content = content.replace(/\$([^$\n]+)\$/g, (match, formula) => {
+        try {
+          return katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false });
+        } catch {
+          return match;
+        }
+      });
+      return content;
+    },
+
+    async renderMermaid() {
+      const mermaidDivs = document.querySelectorAll('.mermaid');
+      for (const div of mermaidDivs) {
+        try {
+          const id = 'mermaid-' + Math.random().toString(36).substr(2, 9);
+          const { svg } = await mermaid.render(id, div.textContent);
+          div.innerHTML = svg;
+        } catch (e) {
+          console.error('Mermaid渲染错误:', e);
+          div.innerHTML = `<pre style="color:red;">Mermaid语法错误: ${div.textContent}</pre>`;
+        }
+      }
+    },
+
+    insertToolbarSyntax(syntax) {
+      if (this.folderFile && this.$refs.editorContainerRef) {
+        this.$refs.editorContainerRef.insertAtCursor(syntax);
+      }
+    },
+
     minimizeWindow() {
       if (window.electronAPI) window.electronAPI.windowMinimize('main');
     },
@@ -151,17 +244,17 @@ export default {
     closeWindow() {
       if (window.electronAPI) window.electronAPI.windowClose('main');
     },
-    
+
     showImagePreview(src) {
       this.previewImage = src;
     },
-    
+
     async insertImage() {
       if (!this.folderFile) {
         alert('请先打开一个文档');
         return;
       }
-      
+
       if (window.electronAPI) {
         const imagePath = await window.electronAPI.selectImage();
         if (imagePath) {
@@ -178,19 +271,21 @@ export default {
         }
       }
     },
-    
+
     async openSettings() {
       if (window.electronAPI) {
         await window.electronAPI.openSettings();
       }
     },
-    
+
     async loadConfig() {
       if (window.electronAPI) {
         const result = await window.electronAPI.getConfig();
         if (result && result.success) {
           this.theme = result.config.theme || 'dark';
           this.language = result.config.language || 'zh-CN';
+          this.autoSave = result.config.autoSave !== false;
+          this.formatMode = result.config.formatMode || 'markdown';
         }
         const iconResult = await window.electronAPI.getIconPath();
         if (iconResult) {
@@ -198,19 +293,24 @@ export default {
         }
       } else {
         this.theme = localStorage.getItem('mkclue-theme') || 'dark';
-        this.iconPath = '/icon.png';
+        this.iconPath = '/mkclue.ico';
       }
       this.applyTheme();
     },
-    
+
     applyTheme() {
       document.documentElement.setAttribute('data-theme', this.theme);
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: this.theme === 'dark' ? 'dark' : 'default',
+        securityLevel: 'loose'
+      });
     },
-    
+
     toggleSidebar() {
       this.sidebarOpen = !this.sidebarOpen;
     },
-    
+
     async openFolder() {
       if (window.electronAPI) {
         const folderPath = await window.electronAPI.openFolderDialog();
@@ -221,19 +321,19 @@ export default {
         }
       }
     },
-    
+
     closeFolder() {
       this.currentFolder = null;
       this.folderFile = null;
       this.folderFileContent = '';
     },
-    
+
     async selectFolderFile(node) {
       if (node.type !== 'file') return;
-      
+
       const ext = node.extension || '';
       const imageExts = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.svg'];
-      
+
       if (imageExts.includes(ext.toLowerCase())) {
         if (window.electronAPI) {
           const result = await window.electronAPI.readFile(node.path);
@@ -243,7 +343,7 @@ export default {
         }
         return;
       }
-      
+
       if (window.electronAPI) {
         const result = await window.electronAPI.readFile(node.path);
         if (result.success) {
@@ -254,9 +354,9 @@ export default {
         }
       }
     },
-    
+
     refreshFolder() {},
-    
+
     async saveCurrentFile() {
       if (this.folderFile && window.electronAPI) {
         const result = await window.electronAPI.saveFile(this.folderFile.path, this.folderFileContent);
@@ -265,40 +365,61 @@ export default {
         }
       }
     },
-    
+
     async createNewDocument() {
       if (window.electronAPI) {
         const filePath = await window.electronAPI.saveFileDialog('新文档.md');
         if (filePath) {
           const fileName = filePath.split(/[/\\]/).pop();
           const name = fileName.replace('.md', '');
-          const result = await window.electronAPI.createFile(filePath, `# ${name}\n\n开始编辑您的 Markdown 文档...`);
+          const initialContent = `# ${name}\n\n开始编辑您的 Markdown 文档...`;
+          const result = await window.electronAPI.createFile(filePath, initialContent);
           if (result.success) {
+            const dirPath = filePath.substring(0, filePath.lastIndexOf(/[/\\]/.test(filePath) ? (filePath.includes('\\') ? '\\' : '/') : '/'));
             if (!this.currentFolder) {
-              this.currentFolder = filePath.substring(0, filePath.lastIndexOf(/[/\\]/.test(filePath) ? (filePath.includes('\\') ? '\\' : '/') : '/'));
+              this.currentFolder = dirPath;
             }
-            this.folderFile = { name: fileName, path: filePath, type: 'file' };
-            this.folderFileContent = `# ${name}\n\n开始编辑您的 Markdown 文档...`;
+            this.folderFile = { name: fileName, path: filePath, type: 'file', extension: '.md' };
+            this.folderFileContent = initialContent;
           }
         }
       }
     },
-    
+
+    async deleteCurrentDocument() {
+      if (!this.folderFile) {
+        alert('请先选择要删除的文档');
+        return;
+      }
+      const confirmed = confirm(`确定要删除 \"${this.folderFile.name}\" 吗？此操作不可撤销。`);
+      if (!confirmed) return;
+
+      if (window.electronAPI) {
+        const result = await window.electronAPI.deleteItem(this.folderFile.path);
+        if (result.success) {
+          this.folderFile = null;
+          this.folderFileContent = '';
+        } else {
+          alert('删除失败: ' + result.error);
+        }
+      }
+    },
+
     updateContent(content) {
       if (this.folderFile) {
         this.folderFileContent = content;
-        if (window.electronAPI) {
+        if (this.autoSave && window.electronAPI) {
           window.electronAPI.saveFile(this.folderFile.path, content);
         }
       }
     },
-    
+
     async openFile(fileInfo) {
       if (!fileInfo || !fileInfo.path) return;
-      
+
       const dirPath = fileInfo.path.substring(0, fileInfo.path.lastIndexOf(/[/\\]/.test(fileInfo.path) ? (fileInfo.path.includes('\\') ? '\\' : '/') : '/'));
       this.currentFolder = dirPath;
-      
+
       if (window.electronAPI) {
         const result = await window.electronAPI.readFile(fileInfo.path);
         if (result.success) {
@@ -333,11 +454,11 @@ export default {
         this.folderFile = null;
         this.folderFileContent = '';
       });
-      
+
       window.electronAPI.onFileOpened((fileInfo) => {
         this.openFile(fileInfo);
       });
-      
+
       window.electronAPI.onConfigChanged((config) => {
         if (config.theme) {
           this.theme = config.theme;
@@ -345,6 +466,12 @@ export default {
         }
         if (config.language) {
           this.language = config.language;
+        }
+        if (config.autoSave !== undefined) {
+          this.autoSave = config.autoSave;
+        }
+        if (config.formatMode !== undefined) {
+          this.formatMode = config.formatMode;
         }
       });
     }

@@ -1,16 +1,57 @@
 <template>
   <div class="folder-explorer">
-    <!-- 文件夹头部 -->
     <div class="folder-header" v-if="currentFolder">
       <div class="folder-path" :title="currentFolder">
         <span class="folder-icon">📁</span>
         <span class="folder-name">{{ getFolderName(currentFolder) }}</span>
       </div>
-      <button class="btn-icon" @click="refreshFolder" title="刷新">🔄</button>
+      <div class="header-actions">
+        <button class="btn-icon" @click="toggleSearch" :class="{ active: showSearch }" title="搜索">
+          🔍
+        </button>
+        <button class="btn-icon" @click="refreshFolder" title="刷新">🔄</button>
+      </div>
     </div>
 
-    <!-- 文件树 -->
-    <div class="file-tree" v-if="tree.length > 0">
+    <Transition name="slide-down">
+      <div class="search-container" v-if="showSearch">
+        <div class="search-input-wrapper">
+          <input
+            type="text"
+            class="search-input"
+            v-model="searchQuery"
+            @input="handleSearch"
+            placeholder="搜索文件名和内容..."
+            ref="searchInputRef"
+          />
+          <button class="search-clear" v-if="searchQuery" @click="clearSearch">✕</button>
+        </div>
+        <div class="search-results" v-if="searchResults.length > 0">
+          <div class="search-results-header">
+            找到 {{ searchResults.length }} 个结果
+          </div>
+          <div 
+            class="search-result-item" 
+            v-for="result in searchResults" 
+            :key="result.path"
+            @click="selectSearchResult(result)"
+          >
+            <span class="result-icon">{{ result.type === 'folder' ? '📁' : '📝' }}</span>
+            <div class="result-info">
+              <span class="result-name">{{ result.name }}</span>
+              <span class="result-match" v-if="result.matchType === 'content'">
+                {{ result.matchPreview }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="search-empty" v-else-if="searchQuery && !isSearching">
+          未找到匹配结果
+        </div>
+      </div>
+    </Transition>
+
+    <div class="file-tree" v-if="tree.length > 0 && !searchQuery">
       <TreeNode
         v-for="node in tree"
         :key="node.path"
@@ -23,13 +64,11 @@
       />
     </div>
 
-    <!-- 空状态 -->
-    <div class="empty-folder" v-else-if="currentFolder">
+    <div class="empty-folder" v-else-if="currentFolder && !searchQuery">
       <div class="empty-icon">📂</div>
       <div class="empty-text">文件夹为空</div>
     </div>
 
-    <!-- 新建对话框 -->
     <div class="modal-overlay" v-if="showCreateDialog" @click.self="showCreateDialog = false">
       <div class="modal">
         <div class="modal-title">{{ createType === 'file' ? '新建文件' : '新建文件夹' }}</div>
@@ -76,6 +115,12 @@ export default {
     const createType = ref('file');
     const newItemName = ref('');
     const createInputRef = ref(null);
+    const showSearch = ref(false);
+    const searchQuery = ref('');
+    const searchResults = ref([]);
+    const searchInputRef = ref(null);
+    const isSearching = ref(false);
+    let searchTimeout = null;
 
     const getFolderName = (path) => {
       return path.split(/[/\\]/).pop() || path;
@@ -88,7 +133,7 @@ export default {
       }
       
       if (window.electronAPI) {
-        const result = await window.electronAPI.readFolderTree(props.currentFolder, 5);
+        const result = await window.electronAPI.readFolderTree(props.currentFolder, 10);
         if (result.success) {
           tree.value = [result.tree];
         }
@@ -109,6 +154,115 @@ export default {
 
     const handleExpand = async (node) => {
       node.expanded = !node.expanded;
+    };
+
+    const toggleSearch = () => {
+      showSearch.value = !showSearch.value;
+      if (showSearch.value) {
+        nextTick(() => {
+          searchInputRef.value?.focus();
+        });
+      } else {
+        searchQuery.value = '';
+        searchResults.value = [];
+      }
+    };
+
+    const handleSearch = async () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+
+      if (!searchQuery.value.trim()) {
+        searchResults.value = [];
+        return;
+      }
+
+      isSearching.value = true;
+
+      searchTimeout = setTimeout(async () => {
+        await performSearch();
+        isSearching.value = false;
+      }, 300);
+    };
+
+    const performSearch = async () => {
+      if (!props.currentFolder || !searchQuery.value.trim()) {
+        searchResults.value = [];
+        return;
+      }
+
+      const query = searchQuery.value.toLowerCase().trim();
+      const results = [];
+
+      const searchInNode = async (node) => {
+        if (node.name.toLowerCase().includes(query)) {
+          results.push({
+            path: node.path,
+            name: node.name,
+            type: node.type,
+            matchType: 'name',
+            matchPreview: null
+          });
+        }
+
+        if (node.type === 'file' && node.extension === '.md') {
+          try {
+            if (window.electronAPI) {
+              const fileResult = await window.electronAPI.readFile(node.path);
+              if (fileResult.success) {
+                const content = fileResult.content.toLowerCase();
+                if (content.includes(query)) {
+                  const contentIndex = content.indexOf(query);
+                  const previewStart = Math.max(0, contentIndex - 30);
+                  const previewEnd = Math.min(content.length, contentIndex + query.length + 30);
+                  const preview = fileResult.content.substring(previewStart, previewEnd);
+                  
+                  if (!results.find(r => r.path === node.path)) {
+                    results.push({
+                      path: node.path,
+                      name: node.name,
+                      type: node.type,
+                      matchType: 'content',
+                      matchPreview: '...' + preview + '...'
+                    });
+                  }
+                }
+              }
+            }
+          } catch (err) {
+            console.error('Search error:', err);
+          }
+        }
+
+        if (node.children) {
+          for (const child of node.children) {
+            await searchInNode(child);
+          }
+        }
+      };
+
+      for (const rootNode of tree.value) {
+        await searchInNode(rootNode);
+      }
+
+      searchResults.value = results.slice(0, 50);
+    };
+
+    const clearSearch = () => {
+      searchQuery.value = '';
+      searchResults.value = [];
+      searchInputRef.value?.focus();
+    };
+
+    const selectSearchResult = (result) => {
+      selectedPath.value = result.path;
+      if (result.type === 'file') {
+        emit('selectFile', { path: result.path, name: result.name });
+      }
+      showSearch.value = false;
+      searchQuery.value = '';
+      searchResults.value = [];
     };
 
     const confirmCreate = async () => {
@@ -164,6 +318,9 @@ export default {
 
     watch(() => props.currentFolder, () => {
       loadFolderTree();
+      searchQuery.value = '';
+      searchResults.value = [];
+      showSearch.value = false;
     });
 
     onMounted(() => {
@@ -177,10 +334,19 @@ export default {
       createType,
       newItemName,
       createInputRef,
+      showSearch,
+      searchQuery,
+      searchResults,
+      searchInputRef,
+      isSearching,
       getFolderName,
       refreshFolder,
       handleSelect,
       handleExpand,
+      toggleSearch,
+      handleSearch,
+      clearSearch,
+      selectSearchResult,
       confirmCreate
     };
   }
@@ -210,6 +376,7 @@ export default {
   gap: 8px;
   overflow: hidden;
   min-width: 0;
+  flex: 1;
 }
 
 .folder-icon {
@@ -226,6 +393,12 @@ export default {
   text-overflow: ellipsis;
 }
 
+.header-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
 .btn-icon {
   background: transparent;
   border: none;
@@ -238,9 +411,164 @@ export default {
   font-size: 14px;
 }
 
-.btn-icon:hover {
+.btn-icon:hover,
+.btn-icon.active {
   background: var(--bg-hover);
   color: var(--text-primary);
+}
+
+.btn-icon.active {
+  color: var(--accent-primary);
+}
+
+.search-container {
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0 10px;
+  transition: border-color 0.2s;
+}
+
+.search-input-wrapper:focus-within {
+  border-color: var(--accent-primary);
+}
+
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 8px 0;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-clear {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.search-clear:hover {
+  color: var(--text-primary);
+}
+
+.search-results {
+  margin-top: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+}
+
+.search-results-header {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.search-result-item:hover {
+  background: var(--bg-hover);
+}
+
+.result-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.result-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.result-name {
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.result-match {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'SF Mono', 'Monaco', monospace;
+}
+
+.search-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.slide-down-enter-active {
+  animation: slideDown 0.2s ease;
+}
+
+.slide-down-leave-active {
+  animation: slideUp 0.15s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 400px;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    max-height: 400px;
+  }
+  to {
+    opacity: 0;
+    max-height: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide-down-enter-active,
+  .slide-down-leave-active {
+    animation: none;
+  }
 }
 
 .file-tree {
@@ -269,7 +597,6 @@ export default {
   font-size: 13px;
 }
 
-/* Modal */
 .modal-overlay {
   position: fixed;
   top: 0;

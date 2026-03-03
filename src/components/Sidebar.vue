@@ -13,6 +13,10 @@
           <span>📝</span>
           <span>新建文档</span>
         </button>
+        <button class="btn btn-delete" @click="$emit('deleteFile')" v-if="currentFolder && folderFile">
+          <span>🗑</span>
+          <span>删除文档</span>
+        </button>
         <button class="btn btn-secondary" @click="$emit('openFolder')" v-if="!currentFolder">
           <span>📁</span>
           <span>打开文件夹</span>
@@ -67,7 +71,7 @@ export default {
       default: 'dark'
     }
   },
-  emits: ['toggleSidebar', 'openFolder', 'closeFolder', 'selectFolderFile', 'folderChanged', 'newFile']
+  emits: ['toggleSidebar', 'openFolder', 'closeFolder', 'selectFolderFile', 'folderChanged', 'newFile', 'deleteFile']
 };
 </script>
 
@@ -160,6 +164,18 @@ export default {
   background: var(--bg-tertiary);
   color: var(--text-primary);
   border-color: var(--border-color);
+}
+
+.btn-delete {
+  background: transparent;
+  border-color: #f87171;
+  color: #f87171;
+}
+
+.btn-delete:hover {
+  background: #f87171;
+  color: white;
+  border-color: #f87171;
 }
 
 .empty-state {

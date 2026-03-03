@@ -55,6 +55,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   renameItem: (oldPath, newName) => 
     ipcRenderer.invoke('rename-item', oldPath, newName),
   
+  moveItem: (sourcePath, targetPath) => 
+    ipcRenderer.invoke('move-item', sourcePath, targetPath),
+  
   fileExists: (filePath) => 
     ipcRenderer.invoke('file-exists', filePath),
   
