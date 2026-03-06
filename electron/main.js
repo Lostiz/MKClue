@@ -155,8 +155,8 @@ function createSettingsWindow() {
   const indexPath = getIndexHtmlPath();
 
   settingsWindow = new BrowserWindow({
-    width: 480,
-    height: 560,
+    width: 700,
+    height: 450,
     minWidth: 400,
     minHeight: 400,
     backgroundColor: '#0f0f14',

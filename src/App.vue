@@ -264,8 +264,15 @@ export default {
             const result = await window.electronAPI.copyImageToFolder(imagePath, mdDir);
             if (result.success) {
               const relativePath = result.name;
-              const imgSyntax = `\n![图片描述](${relativePath})\n`;
-              this.folderFileContent += imgSyntax;
+              const imgSyntax = `![图片描述](${relativePath})`;
+              
+              // 使用 EditorContainer 的 insertAtCursor 方法插入到光标位置
+              if (this.$refs.editorContainerRef) {
+                this.$refs.editorContainerRef.insertAtCursor(imgSyntax);
+              } else {
+                // 如果组件不可用，则添加到末尾（兼容性处理）
+                this.folderFileContent += `\n${imgSyntax}\n`;
+              }
             }
           }
         }
