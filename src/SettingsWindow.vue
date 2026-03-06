@@ -103,7 +103,7 @@
             <div class="about-content">
               <img v-if="iconPath" :src="iconPath" class="app-logo-large" alt="MKClue" />
               <h3 class="app-name">MKClue</h3>
-              <p class="app-version">版本 v1.1</p>
+              <p class="app-version">版本 v1.2</p>
               <p class="app-desc">优雅的 Markdown 编辑器</p>
               
               <div class="author-info">

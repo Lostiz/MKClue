@@ -595,7 +595,7 @@ ipcMain.handle('get-app-info', () => {
     success: true,
     info: {
       name: 'MKClue',
-      version: '1.1.0',
+      version: '1.2.0',
       electron: process.versions.electron,
       node: process.versions.node,
       platform: process.platform
