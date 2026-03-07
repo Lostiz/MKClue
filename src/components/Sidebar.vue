@@ -98,7 +98,7 @@ export default {
 .sidebar-header {
   padding: 20px;
   border-bottom: 1px solid var(--border-color);
-  background: linear-gradient(180deg, var(--bg-secondary) 0%, rgba(26, 26, 36, 0.8) 100%);
+  background: linear-gradient(180deg, var(--bg-secondary) 0%);
 }
 
 .sidebar-title {
